@@ -64,7 +64,7 @@ int main(int argc, char **argv)
     char *fdata;
     struct ethhdr *fhead;
     struct ifreq ifr;
-    struct sockaddr_ll sall;
+    struct sockaddr_ll sall, sreceive;
 
     sfd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_CUSTOM));
     strncpy(ifr.ifr_name, argv[1], IFNAMSIZ);
@@ -76,14 +76,18 @@ int main(int argc, char **argv)
     sall.sll_hatype = ARPHRD_ETHER;
     sall.sll_pkttype = PACKET_HOST;
     sall.sll_halen = ETH_ALEN;
+    socklen_t addr_len = sizeof(sreceive);
     bind(sfd, (struct sockaddr *)&sall, sizeof(struct sockaddr_ll));
+    
+    
     while (1)
     {
         frame = malloc(ETH_FRAME_LEN);
         memset(frame, 0, ETH_FRAME_LEN);
         fhead = (struct ethhdr *)frame;
         fdata = frame + ETH_HLEN;
-        len = recvfrom(sfd, frame, ETH_FRAME_LEN, 0, NULL, NULL);
+        len = recvfrom(sfd, frame, ETH_FRAME_LEN, 0, (struct sockaddr *)&sreceive, &addr_len);
+        
         printf("---- FRAME RECEIVED ----\n");
         printf("[%dB] %02x:%02x:%02x:%02x:%02x:%02x -> ", (int)len,
                fhead->h_source[0], fhead->h_source[1], fhead->h_source[2],
@@ -92,7 +96,7 @@ int main(int argc, char **argv)
                fhead->h_dest[0], fhead->h_dest[1], fhead->h_dest[2],
                fhead->h_dest[3], fhead->h_dest[4], fhead->h_dest[5]);
         // --- Task 3 ---
-        printf("Packet type: %u | ", sall.sll_pkttype);
+        printf("Packet type: %u | ", sreceive.sll_pkttype);
         printf("EtherType: %04x | ", ntohs(fhead->h_proto));
         // --------------
         printf("Data: %s\n", fdata);
