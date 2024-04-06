@@ -33,5 +33,5 @@ gcc -Wall server.c -o server
 ```
 * użycie: 
 ```bash
-/server
+./server
 ```
